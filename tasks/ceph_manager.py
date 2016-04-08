@@ -697,11 +697,11 @@ class Thrasher:
             for osd in self.live_osds:
                 # Ignore errors because live_osds is in flux
                 self.ceph_manager.osd_admin_socket(osd, command=['dump_ops_in_flight'],
-                                     check_status=False)
+                                     check_status=False, timeout=30)
                 self.ceph_manager.osd_admin_socket(osd, command=['dump_blocked_ops'],
-                                     check_status=False)
+                                     check_status=False, timeout=30)
                 self.ceph_manager.osd_admin_socket(osd, command=['dump_historic_ops'],
-                                     check_status=False)
+                                     check_status=False, timeout=30)
 
     @log_exc
     def do_thrash(self):
@@ -950,8 +950,8 @@ class CephManager:
                 ]
             )
 
-    def osd_admin_socket(self, osd_id, command, check_status=True):
-        return self.admin_socket('osd', osd_id, command, check_status)
+    def osd_admin_socket(self, osd_id, command, check_status=True, timeout=0):
+        return self.admin_socket('osd', osd_id, command, check_status, timeout)
 
     def find_remote(self, service_type, service_id):
         """
@@ -972,7 +972,7 @@ class CephManager:
                                                           service_id))
 
     def admin_socket(self, service_type, service_id,
-                     command, check_status=True):
+                     command, check_status=True, timeout=0):
         """
         Remotely start up ceph specifying the admin socket
         :param command: a list of words to use as the command
@@ -985,6 +985,8 @@ class CephManager:
             'adjust-ulimits',
             'ceph-coverage',
             '{tdir}/archive/coverage'.format(tdir=testdir),
+            'timeout',
+            timeout
             'ceph',
             '--admin-daemon',
             '/var/run/ceph/ceph-{type}.{id}.asok'.format(
